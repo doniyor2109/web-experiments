@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Web experiments - Streams</title>
+    <style>
+      .wrapper {
+        display: flex;
+      }
+      .preview {
+        flex: 1;
+      }
+      #source {
+        overflow: auto;
+        max-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="preview">
+        <button id="start-btn">start</button>
+        <button id="pause-btn" disabled>pause</button>
+        <button id="cancel-btn" disabled>cancel</button>
+
+        <ul id="stream-list"></ul>
+      </div>
+
+      <pre id="source"></pre>
+    </div>
+
+    <script>
+      class ReadableStreamConfig {
+        #interval;
+        #counter = 0;
+        #running = true;
+
+        start = (controller) => {
+          this.#interval = setInterval(() => {
+            if (this.#running) {
+              this.#counter++;
+
+              controller.enqueue(this.#counter);
+            }
+          }, 1_000);
+        };
+
+        cancel() {
+          clearInterval(this.#interval);
+        }
+
+        pause() {
+          this.#running = false;
+        }
+
+        continue() {
+          this.#running = true;
+        }
+
+        isRunning() {
+          return this.#running;
+        }
+      }
+
+      class WritableStreamConfig {
+        #list;
+        start() {
+          const list = document.getElementById('stream-list');
+          if (!list) {
+            throw new Error('List container not found');
+          }
+          this.#list = list;
+        }
+        write(chunk) {
+          const li = document.createElement('li');
+          li.textContent = chunk;
+          this.#list.appendChild(li);
+        }
+        close() {
+          [...this.#list.children].forEach((child) => {
+            this.#list.removeChild(child);
+          });
+        }
+      }
+
+      const startBtn = document.getElementById('start-btn');
+      const pauseBtn = document.getElementById('pause-btn');
+      const cancelBtn = document.getElementById('cancel-btn');
+
+      let config;
+      let readableStream;
+      let reader;
+
+      let writableStream = new WritableStream(new WritableStreamConfig());
+      let writer;
+
+      startBtn.addEventListener('click', start);
+      pauseBtn.addEventListener('click', pause);
+      cancelBtn.addEventListener('click', cancel);
+
+      document.getElementById('source').innerText =
+        document.scripts[0].innerText;
+
+      function toggleButtons() {
+        startBtn.toggleAttribute('disabled');
+        pauseBtn.toggleAttribute('disabled');
+        cancelBtn.toggleAttribute('disabled');
+      }
+
+      async function start() {
+        toggleButtons();
+
+        if (config && !config.isRunning()) {
+          config.continue();
+          return;
+        }
+
+        config = new ReadableStreamConfig();
+        readableStream = new ReadableStream(config);
+        reader = readableStream.getReader();
+
+        writableStream = new WritableStream(new WritableStreamConfig());
+        writer = writableStream.getWriter();
+
+        let chunk = await reader.read();
+        while (!chunk.done) {
+          await writer.write(chunk.value);
+          chunk = await reader.read();
+        }
+      }
+
+      function pause() {
+        toggleButtons();
+        config.pause();
+      }
+
+      function cancel() {
+        toggleButtons();
+
+        reader.cancel();
+        writer.close();
+      }
+    </script>
+  </body>
+</html>

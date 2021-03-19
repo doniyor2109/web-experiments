@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fetch streams</title>
+    <style>
+      .wrapper {
+        display: flex;
+      }
+      #preview {
+        flex: 1;
+        overflow: scroll;
+        max-height: 100vh;
+      }
+      #source {
+        overflow: auto;
+        max-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <p id="preview"></p>
+      <pre id="source"></pre>
+    </div>
+
+    <script>
+      const textElement = document.getElementById('preview');
+
+      document.getElementById('source').innerText =
+        document.scripts[0].innerText;
+
+      fetch('/api/stream').then((res) => {
+        const reader = res.body.getReader();
+
+        async function read() {
+          let chunk = await reader.read();
+
+          while (!chunk.done) {
+            const text = new TextDecoder().decode(chunk.value);
+
+            textElement.innerText += text;
+            chunk = await reader.read();
+          }
+        }
+
+        return read();
+      });
+    </script>
+  </body>
+</html>
