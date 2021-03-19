@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Compression Stream</title>
+    <style>
+      .wrapper {
+        display: flex;
+      }
+      #preview {
+        flex: 1;
+      }
+      #source {
+        overflow: auto;
+        max-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div id="preview">
+        <button id="download">download</button>
+        <p id="content"></p>
+      </div>
+      <pre id="source"></pre>
+    </div>
+
+    <script>
+      const downloadBtn = document.getElementById('download');
+
+      document.getElementById('source').innerText =
+        document.scripts[0].innerText;
+
+      downloadBtn.addEventListener('click', download);
+
+      function toggleButton() {
+        downloadBtn.toggleAttribute('disabled');
+      }
+
+      function download() {
+        toggleButton();
+
+        fetch('/api/stream')
+          .then(async (res) => {
+            if (!res.ok) {
+              throw Error(res.statusText);
+            }
+
+            const [htmlStream, zipStream] = res.body.tee();
+            const pickerStream = await pickerWritableStream();
+
+            return Promise.all([
+              htmlStream
+                .pipeThrough(new TextDecoderStream())
+                .pipeTo(htmlWritableStream()),
+              zipStream
+                .pipeThrough(new CompressionStream('gzip'))
+                .pipeTo(pickerStream),
+            ]);
+          })
+          .catch(console.error)
+          .finally(toggleButton);
+      }
+
+      function htmlWritableStream() {
+        const contentElement = document.getElementById('content');
+
+        return new WritableStream({
+          write(chunk) {
+            contentElement.innerText += chunk;
+          },
+        });
+      }
+
+      async function pickerWritableStream() {
+        const handle = await showSaveFilePicker({
+          types: [
+            {
+              description: 'gzip File',
+              accept: {
+                'application/gzip': ['.gz'],
+              },
+            },
+          ],
+        });
+        return await handle.createWritable();
+      }
+    </script>
+  </body>
+</html>
