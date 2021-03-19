@@ -15,6 +15,7 @@
         max-height: 100vh;
       }
     </style>
+    <script src="https://unpkg.com/web-streams-polyfill/dist/polyfill.min.js"></script>
   </head>
   <body>
     <div class="wrapper">
@@ -29,7 +30,7 @@
       const downloadBtn = document.getElementById('download');
 
       document.getElementById('source').innerText =
-        document.scripts[0].innerText;
+        document.scripts[1].innerText;
 
       downloadBtn.addEventListener('click', download);
 

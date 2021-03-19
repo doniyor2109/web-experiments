@@ -17,6 +17,7 @@
         max-height: 100vh;
       }
     </style>
+    <script src="https://unpkg.com/web-streams-polyfill/dist/polyfill.min.js"></script>
   </head>
   <body>
     <div class="wrapper">
@@ -28,11 +29,12 @@
       const textElement = document.getElementById('preview');
 
       document.getElementById('source').innerText =
-        document.scripts[0].innerText;
+        document.scripts[1].innerText;
 
       fetch('/api/stream').then((res) => {
         return res.body
           .pipeThrough(new TextDecoderStream())
+          .pipeThrough(upperCaseStream())
           .pipeTo(htmlWriterStream());
       });
 
@@ -40,6 +42,14 @@
         return new WritableStream({
           write(chunk) {
             textElement.innerText += chunk;
+          },
+        });
+      }
+
+      function upperCaseStream() {
+        return new TransformStream({
+          transform(chunk, controller) {
+            controller.enqueue(chunk.toUpperCase());
           },
         });
       }

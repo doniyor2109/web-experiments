@@ -15,6 +15,7 @@
         max-height: 100vh;
       }
     </style>
+    <script src="https://unpkg.com/web-streams-polyfill/dist/polyfill.min.js"></script>
   </head>
   <body>
     <div class="wrapper">
@@ -31,46 +32,46 @@
 
     <script>
       class ReadableStreamConfig {
-        #interval;
-        #counter = 0;
-        #running = true;
+        _interval;
+        _counter = 0;
+        _running = true;
 
         start = (controller) => {
-          this.#interval = setInterval(() => {
-            if (this.#running) {
-              this.#counter++;
+          this._interval = setInterval(() => {
+            if (this._running) {
+              this._counter++;
 
-              controller.enqueue(this.#counter);
+              controller.enqueue(this._counter);
             }
           }, 1_000);
         };
 
         cancel() {
-          clearInterval(this.#interval);
+          clearInterval(this._interval);
         }
 
         pause() {
-          this.#running = false;
+          this._running = false;
         }
 
         continue() {
-          this.#running = true;
+          this._running = true;
         }
       }
 
       class WritableStreamConfig {
-        #list;
+        _list;
         start() {
           const list = document.getElementById('stream-list');
           if (!list) {
             throw new Error('List container not found');
           }
-          this.#list = list;
+          this._list = list;
         }
         write(chunk) {
           const li = document.createElement('li');
           li.textContent = chunk;
-          this.#list.appendChild(li);
+          this._list.appendChild(li);
         }
         close() {
           this.cleanup();
@@ -79,8 +80,8 @@
           this.cleanup();
         }
         cleanup() {
-          [...this.#list.children].forEach((child) => {
-            this.#list.removeChild(child);
+          [...this._list.children].forEach((child) => {
+            this._list.removeChild(child);
           });
         }
       }
@@ -100,7 +101,7 @@
       cancelBtn.addEventListener('click', cancel);
 
       document.getElementById('source').innerText =
-        document.scripts[0].innerText;
+        document.scripts[1].innerText;
 
       function toggleButtons() {
         startBtn.toggleAttribute('disabled');
