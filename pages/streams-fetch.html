@@ -31,21 +31,18 @@
         document.scripts[0].innerText;
 
       fetch('/api/stream').then((res) => {
-        const reader = res.body.getReader();
-
-        async function read() {
-          let chunk = await reader.read();
-
-          while (!chunk.done) {
-            const text = new TextDecoder().decode(chunk.value);
-
-            textElement.innerText += text;
-            chunk = await reader.read();
-          }
-        }
-
-        return read();
+        return res.body
+          .pipeThrough(new TextDecoderStream())
+          .pipeTo(htmlWriterStream());
       });
+
+      function htmlWriterStream() {
+        return new WritableStream({
+          write(chunk) {
+            textElement.innerText += chunk;
+          },
+        });
+      }
     </script>
   </body>
 </html>

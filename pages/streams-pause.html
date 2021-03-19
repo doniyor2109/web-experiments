@@ -56,10 +56,6 @@
         continue() {
           this.#running = true;
         }
-
-        isRunning() {
-          return this.#running;
-        }
       }
 
       class WritableStreamConfig {
@@ -77,6 +73,12 @@
           this.#list.appendChild(li);
         }
         close() {
+          this.cleanup();
+        }
+        abort() {
+          this.cleanup();
+        }
+        cleanup() {
           [...this.#list.children].forEach((child) => {
             this.#list.removeChild(child);
           });
@@ -89,10 +91,9 @@
 
       let config;
       let readableStream;
-      let reader;
+      let abortController;
 
       let writableStream = new WritableStream(new WritableStreamConfig());
-      let writer;
 
       startBtn.addEventListener('click', start);
       pauseBtn.addEventListener('click', pause);
@@ -110,23 +111,19 @@
       async function start() {
         toggleButtons();
 
-        if (config && !config.isRunning()) {
+        if (abortController && !abortController.signal.aborted) {
           config.continue();
           return;
         }
 
         config = new ReadableStreamConfig();
         readableStream = new ReadableStream(config);
-        reader = readableStream.getReader();
-
         writableStream = new WritableStream(new WritableStreamConfig());
-        writer = writableStream.getWriter();
+        abortController = new AbortController();
 
-        let chunk = await reader.read();
-        while (!chunk.done) {
-          await writer.write(chunk.value);
-          chunk = await reader.read();
-        }
+        await readableStream.pipeTo(writableStream, {
+          signal: abortController.signal,
+        });
       }
 
       function pause() {
@@ -137,8 +134,7 @@
       function cancel() {
         toggleButtons();
 
-        reader.cancel();
-        writer.close();
+        abortController.abort();
       }
     </script>
   </body>
