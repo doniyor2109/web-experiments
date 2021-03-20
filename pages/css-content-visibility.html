@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CSS - content-visibility</title>
+    <style>
+      section {
+        margin: 50px 0;
+        padding: 10px;
+        border: 1px solid red;
+      }
+      .content-visibility {
+        --height: auto;
+        content-visibility: auto;
+        contain-intrinsic-size: 0 var(--height);
+      }
+    </style>
+  </head>
+  <body>
+    <main id="main">
+      <label for="checkbox">content-visibility:</label>
+      <input id="checkbox" type="checkbox" />
+    </main>
+
+    <script>
+      const mainElement = document.getElementById('main');
+      const checkboxElement = document.getElementById('checkbox');
+
+      const text = Array.from({ length: 1000 })
+        .fill(
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+        )
+        .join(' ');
+
+      Array.from({ length: 10 }).forEach(() => {
+        const section = document.createElement('section');
+        section.innerText = text;
+        mainElement.append(section);
+      });
+
+      checkboxElement.addEventListener('input', () => {
+        [...document.querySelectorAll('section')].forEach((section) => {
+          section.style.setProperty('--height', `${section.clientHeight}px`);
+          section.classList.toggle('content-visibility');
+        });
+      });
+    </script>
+  </body>
+</html>
