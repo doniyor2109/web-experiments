@@ -15,7 +15,6 @@
         max-height: 100vh;
       }
     </style>
-    <script src="https://unpkg.com/web-streams-polyfill/dist/polyfill.min.js"></script>
   </head>
   <body>
     <div class="wrapper">
@@ -50,11 +49,11 @@
           clearInterval(this._interval);
         }
 
-        pause() {
+        _pause() {
           this._running = false;
         }
 
-        continue() {
+        _continue() {
           this._running = true;
         }
       }
@@ -74,12 +73,12 @@
           this._list.appendChild(li);
         }
         close() {
-          this.cleanup();
+          this._cleanup();
         }
         abort() {
-          this.cleanup();
+          this._cleanup();
         }
-        cleanup() {
+        _cleanup() {
           [...this._list.children].forEach((child) => {
             this._list.removeChild(child);
           });
@@ -113,7 +112,7 @@
         toggleButtons();
 
         if (abortController && !abortController.signal.aborted) {
-          config.continue();
+          config._continue();
           return;
         }
 

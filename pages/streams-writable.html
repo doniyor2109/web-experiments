@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Writable Stream</title>
+    <style>
+      .wrapper {
+        display: flex;
+      }
+      #preview {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-height: 100vh;
+      }
+      #output {
+        overflow: auto;
+      }
+      #source {
+        flex-shrink: 0;
+        overflow: auto;
+        max-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div id="preview">
+        <label for="input">Input</label>
+        <textarea name="text" id="input" cols="30" rows="10"></textarea>
+
+        <label for="output">Output</label>
+        <pre id="output"></pre>
+      </div>
+      <pre id="source"></pre>
+    </div>
+
+    <script>
+      document.getElementById('source').innerText =
+        document.scripts[0].innerText;
+
+      const inputElement = document.getElementById('input');
+      const outputElement = document.getElementById('output');
+
+      readableInput().pipeTo(writableOutput());
+
+      function readableInput() {
+        return new ReadableStream(
+          new (class {
+            _controller;
+
+            start(controller) {
+              this._controller = controller;
+              inputElement.addEventListener('input', this._handleInputChange);
+            }
+            cancel() {
+              inputElement.removeEventListener(
+                'input',
+                this._handleInputChange
+              );
+            }
+            _handleInputChange = ({ target: { value } }) => {
+              this._controller.enqueue(value);
+            };
+          })()
+        );
+      }
+
+      function writableOutput() {
+        return new WritableStream({
+          start() {
+            outputElement.innerText = '';
+          },
+          write(chunk) {
+            outputElement.innerText = chunk;
+          },
+        });
+      }
+    </script>
+  </body>
+</html>

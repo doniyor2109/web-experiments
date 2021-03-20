@@ -17,33 +17,50 @@
         max-height: 100vh;
       }
     </style>
-    <script src="https://unpkg.com/web-streams-polyfill/dist/polyfill.min.js"></script>
   </head>
   <body>
     <div class="wrapper">
-      <p id="preview"></p>
+      <div id="preview">
+        <span id="progress"></span>
+        <p id="text"></p>
+      </div>
       <pre id="source"></pre>
     </div>
 
     <script>
-      const textElement = document.getElementById('preview');
+      const textElement = document.getElementById('text');
+      const progressElement = document.getElementById('progress');
 
       document.getElementById('source').innerText =
-        document.scripts[1].innerText;
+        document.scripts[0].innerText;
 
       fetch('/api/stream').then((res) => {
+        const length = res.headers.get('x-content-length');
         return res.body
           .pipeThrough(new TextDecoderStream())
           .pipeThrough(upperCaseStream())
-          .pipeTo(htmlWriterStream());
+          .pipeTo(htmlWriterStream(length));
       });
 
-      function htmlWriterStream() {
-        return new WritableStream({
-          write(chunk) {
-            textElement.innerText += chunk;
-          },
-        });
+      function htmlWriterStream(total) {
+        return new WritableStream(
+          new (class {
+            _progress;
+            _updateProgress() {
+              progressElement.innerText = `${this._progress} / ${total}`;
+            }
+
+            start() {
+              this._progress = 0;
+              this._updateProgress();
+            }
+            write(chunk) {
+              textElement.innerText += chunk;
+              this._progress += chunk.length;
+              this._updateProgress();
+            }
+          })()
+        );
       }
 
       function upperCaseStream() {

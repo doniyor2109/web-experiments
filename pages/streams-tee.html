@@ -2,20 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Compression Stream</title>
+    <title>Tee Stream</title>
     <style>
       .wrapper {
         display: flex;
       }
       #preview {
         flex: 1;
+        overflow: scroll;
+        max-height: 100vh;
       }
       #source {
         overflow: auto;
         max-height: 100vh;
       }
     </style>
-    <script src="https://unpkg.com/web-streams-polyfill/dist/polyfill.min.js"></script>
   </head>
   <body>
     <div class="wrapper">
@@ -30,7 +31,7 @@
       const downloadBtn = document.getElementById('download');
 
       document.getElementById('source').innerText =
-        document.scripts[1].innerText;
+        document.scripts[0].innerText;
 
       downloadBtn.addEventListener('click', download);
 
@@ -48,7 +49,6 @@
             }
 
             const [htmlStream, zipStream] = res.body.tee();
-            const pickerStream = await pickerWritableStream();
 
             return Promise.all([
               htmlStream
@@ -56,7 +56,7 @@
                 .pipeTo(htmlWritableStream()),
               zipStream
                 .pipeThrough(new CompressionStream('gzip'))
-                .pipeTo(pickerStream),
+                .pipeTo(await pickerWritableStream()),
             ]);
           })
           .catch(console.error)
