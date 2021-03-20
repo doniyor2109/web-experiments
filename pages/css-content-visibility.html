@@ -14,6 +14,12 @@
         content-visibility: auto;
         contain-intrinsic-size: 0 var(--height);
       }
+
+      @supports not (content-visibility: auto) {
+        .content-visibility {
+          contain: layout paint;
+        }
+      }
     </style>
   </head>
   <body>
