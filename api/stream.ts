@@ -5,7 +5,7 @@ import { VercelApiHandler } from '@vercel/node';
 const main: VercelApiHandler = async (req, res) => {
   const readStream = createReadStream(join(__dirname, 'big-text.txt'));
   readStream.pipe(res);
-  res.setHeader('x-content-length', 1686507);
+  res.setHeader('x-content-length', 1_686_507);
 };
 
 module.exports = main;

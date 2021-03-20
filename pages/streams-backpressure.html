@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Streams Backpressure</title>
+    <style>
+      .wrapper {
+        display: flex;
+      }
+      .preview {
+        flex: 1;
+      }
+      #source {
+        overflow: auto;
+        max-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="preview">
+        <label for="progress">Progress:</label>
+        <progress id="progress" value="0" max="100">0</progress>
+
+        <pre id="timeline"></pre>
+      </div>
+
+      <pre id="source"></pre>
+    </div>
+
+    <script>
+      const progressElement = document.getElementById('progress');
+      const timelineElement = document.getElementById('timeline');
+
+      const writable = progressWritableStream();
+      const writer = writable.getWriter();
+
+      main(writer, 1);
+
+      async function main(writer, count) {
+        if (count > 100) {
+          updateTimeline('close');
+          return writer.close();
+        }
+
+        if (writer.desiredSize === 0) {
+          updateTimeline('backpressure');
+          await writer.write(await wait(1000).then(() => count));
+        } else {
+          updateTimeline(`increment: ${count}`);
+          writer.write(count);
+        }
+
+        return main(writer, count + 1);
+      }
+
+      function updateTimeline(action) {
+        timelineElement.innerText += '\n' + action;
+      }
+
+      function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function progressWritableStream() {
+        return new WritableStream(
+          {
+            write(chunk) {
+              progressElement.innerText = chunk;
+              progressElement.setAttribute('value', chunk);
+            },
+          },
+          { highWaterMark: 10 }
+        );
+      }
+    </script>
+  </body>
+</html>
